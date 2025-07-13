@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador CRM - Honda</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #e60012;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    form label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    form input, form select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    button {
+      padding: 10px 15px;
+      background: #e60012;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .chat {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 2rem;
+    }
+    .chat h3 {
+      margin-top: 0;
+    }
+    .chat-messages {
+      height: 200px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .chat-messages p {
+      margin: 5px 0;
+    }
+    .chat input[type="text"] {
+      width: 60%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .chat .chat-buttons {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .chat button {
+      padding: 8px 12px;
+      background: #e60012;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador CRM - Honda</h1>
+    <p>Recopila y gestiona datos de clientes</p>
+  </header>
+
+  <div class="container">
+    <form id="crmForm">
+      <div>
+        <label for="nombre">Nombre completo</label>
+        <input type="text" id="nombre" required>
+      </div>
+      <div>
+        <label for="correo">Correo electrónico</label>
+        <input type="email" id="correo" required>
+      </div>
+      <div>
+        <label for="telefono">Teléfono</label>
+        <input type="tel" id="telefono">
+      </div>
+      <div>
+        <label for="vehiculo">Vehículo de interés</label>
+        <select id="vehiculo">
+          <option value="Civic">Civic</option>
+          <option value="CR-V">CR-V</option>
+          <option value="Accord">Accord</option>
+          <option value="Moto">Moto Honda</option>
+        </select>
+      </div>
+      <div>
+        <label for="contacto">Preferencia de contacto</label>
+        <select id="contacto">
+          <option value="Correo">Correo electrónico</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Teléfono">Llamada telefónica</option>
+        </select>
+      </div>
+      <div class="full-width">
+        <button type="submit">Agregar cliente</button>
+      </div>
+    </form>
+
+    <div class="chat" id="chatBox" style="display:none">
+      <h3>Chat con asesor Honda</h3>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-buttons">
+        <input type="text" id="clienteMensaje" placeholder="Escribe tu mensaje...">
+        <button onclick="enviarRespuestaCliente()">Enviar</button>
+        <button onclick="cargarMensajes()">Actualizar mensajes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('crmForm');
+    const chatBox = document.getElementById('chatBox');
+    const chatMessages = document.getElementById('chatMessages');
+    const clienteMensaje = document.getElementById('clienteMensaje');
+    let clienteActual = null;
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const nombre = document.getElementById('nombre').value;
+      const correo = document.getElementById('correo').value;
+      const telefono = document.getElementById('telefono').value;
+      const vehiculo = document.getElementById('vehiculo').value;
+      const contacto = document.getElementById('contacto').value;
+
+      let clientes = JSON.parse(localStorage.getItem('clientesHonda')) || [];
+      let existente = clientes.find(c => c.correo === correo);
+
+      if (existente) {
+        clienteActual = existente;
+      } else {
+        clienteActual = {
+          nombre,
+          correo,
+          telefono,
+          vehiculo,
+          contacto,
+          estado: 'Nuevo',
+          mensajes: []
+        };
+        clientes.push(clienteActual);
+        localStorage.setItem('clientesHonda', JSON.stringify(clientes));
+      }
+
+      form.reset();
+      chatBox.style.display = 'block';
+      cargarMensajes();
+    });
+
+    function cargarMensajes() {
+      let clientes = JSON.parse(localStorage.getItem('clientesHonda')) || [];
+      clienteActual = clientes.find(c => c.correo === clienteActual.correo);
+      chatMessages.innerHTML = '';
+      clienteActual.mensajes?.forEach(m => {
+        const p = document.createElement('p');
+        p.textContent = m;
+        chatMessages.appendChild(p);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function enviarRespuestaCliente() {
+      const mensaje = clienteMensaje.value.trim();
+      if (mensaje) {
+        clienteActual.mensajes = clienteActual.mensajes || [];
+        clienteActual.mensajes.push(`Cliente: ${mensaje}`);
+
+        let clientes = JSON.parse(localStorage.getItem('clientesHonda')) || [];
+        let index = clientes.findIndex(c => c.correo === clienteActual.correo);
+        if (index !== -1) {
+          clientes[index] = clienteActual;
+          localStorage.setItem('clientesHonda', JSON.stringify(clientes));
+        }
+
+        clienteMensaje.value = '';
+        cargarMensajes();
+      }
+    }
+  </script>
+</body>
+</html>
